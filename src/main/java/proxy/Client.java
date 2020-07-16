@@ -14,10 +14,10 @@ public class Client {
             URL url = new URL("http://fluxfm.hoerradar.de/fluxfm-berlin");
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
-            inputStream = connection.getInputStream();
+            this.inputStream = connection.getInputStream();
             System.out.println("passed through GET");
 //            while (true) {
-//                //System.out.println(new BufferedReader(new InputStreamReader(inputStream)).readLine());
+//                System.out.println(new BufferedReader(new InputStreamReader(inputStream)).readLine());
 //                buf = new BufferedReader(new InputStreamReader(inputStream)).readLine().getBytes();
 //                Thread.sleep(1000);
 //            }
