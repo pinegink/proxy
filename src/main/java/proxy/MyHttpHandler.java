@@ -10,13 +10,13 @@ import java.util.Map;
 
 public class MyHttpHandler implements HttpHandler {
     private Client client;
-    public MyHttpHandler(){
+
+    public MyHttpHandler() {
     }
 
     @Override
     public void handle(HttpExchange httpExchange) throws IOException {
         System.out.println("handle");
-
         String requestParamValue;
         requestParamValue = handleGetRequest(httpExchange);
         handleResponse(httpExchange, requestParamValue);
@@ -30,9 +30,7 @@ public class MyHttpHandler implements HttpHandler {
     private void handleResponse(HttpExchange httpExchange, String requestParamValue) throws IOException {
         if (client == null) {
             client = new Client();
-//            new Thread(() -> client.start()).start();
         }
-
         OutputStream outputStream = httpExchange.getResponseBody();
         setHeaders(httpExchange);
         httpExchange.sendResponseHeaders(200, 0);
@@ -41,22 +39,19 @@ public class MyHttpHandler implements HttpHandler {
 
         } catch (Exception e) {
         }
-        new Thread(()-> {
+        new Thread(() -> {
             try {
                 client.getInputStream().transferTo(outputStream);
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }).start();
-
         outputStream.flush();
-
-
-
     }
-    private void setHeaders (HttpExchange httpExchange){
+
+    private void setHeaders(HttpExchange httpExchange) {
         Map<String, String> headers = client.getResponseHeaders();
-        for (Map.Entry<String, String> entry : headers.entrySet()){
+        for (Map.Entry<String, String> entry : headers.entrySet()) {
             httpExchange.getResponseHeaders().set(entry.getValue(), entry.getKey());
         }
     }

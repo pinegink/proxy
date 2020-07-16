@@ -20,11 +20,6 @@ public class Client {
             setHeaders(connection);
             this.inputStream = connection.getInputStream();
             System.out.println("passed through GET");
-//            while (true) {
-//                System.out.println(new BufferedReader(new InputStreamReader(inputStream)).readLine());
-//                buf = new BufferedReader(new InputStreamReader(inputStream)).readLine().getBytes();
-//                Thread.sleep(1000);
-//            }
             //connection.disconnect();
         } catch (Exception e) {
             e.printStackTrace();
