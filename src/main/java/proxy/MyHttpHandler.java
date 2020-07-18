@@ -2,26 +2,22 @@ package proxy;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.text.StringEscapeUtils;
 
-import java.io.*;
-import java.nio.ByteBuffer;
-import java.nio.channels.Channels;
-import java.nio.channels.WritableByteChannel;
-import java.util.ArrayList;
-import java.util.List;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Map;
+import java.util.logging.Logger;
 
 public class MyHttpHandler implements HttpHandler {
+    private static Logger log = Logger.getLogger(MyHttpHandler.class.getName());
     private Client client;
-    private ByteBuffer byteBuffer;
-    private List<ByteBuffer> duplicateBuf;
-    private int clientId;
-    byte[] buf;
+    private byte[] buf;
+    private int clients;
 
     public MyHttpHandler() {
-        this.duplicateBuf = new ArrayList<>();
+        System.out.println("httpHandler created");
+        buf = new byte[16384];
+        clients = 0;
     }
 
     @Override
@@ -38,21 +34,29 @@ public class MyHttpHandler implements HttpHandler {
     }
 
     private void handleResponse(HttpExchange httpExchange, String requestParamValue) throws IOException {
+        clients++;
         if (client == null) {
             client = new Client();
-        }
-        OutputStream outputStream = httpExchange.getResponseBody();
-        setHeaders(httpExchange);
-        httpExchange.sendResponseHeaders(200, 0);
+            new Thread(() -> {
+                while (client!=null) {
+                    System.out.println("clients:" + clients);
+                    if (clients == 0) {
+                        client.closeConnection(); // закрывается, проверено
+                        client = null;
+                    }
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
 
-        if (buf == null){
-            buf = new byte[16384];
-            BufferedInputStream bufferedInputStream = new BufferedInputStream(client.getInputStream());
-            new Thread(()->{
+                }
+            }).start();
+            new Thread(() -> {
                 try {
-                    while (true){
-//                        client.getInputStream().read(buf);
-                        bufferedInputStream.read(buf);
+                    while (client != null) {
+                        client.getInputStream().read(buf);
+//                        bufferedInputStream.read(buf);
                         try {
                             Thread.sleep(1000);
                         } catch (InterruptedException e) {
@@ -64,18 +68,23 @@ public class MyHttpHandler implements HttpHandler {
                 }
             }).start();
         }
-        new Thread(()->{
+        OutputStream outputStream = httpExchange.getResponseBody();
+        setHeaders(httpExchange);
+        httpExchange.sendResponseHeaders(200, 0);
+
+//            BufferedInputStream bufferedInputStream = new BufferedInputStream(client.getInputStream());
+
+
+        new Thread(() -> {
             try {
-                byte old =0;
-                while (true){
-                    if (buf[0] != old){      /// если поставить такой if - данные в buf вообще не обновляются
+                byte old = 0;
+                while (true) {
+                    if (buf[0] != old) {
                         old = buf[0];
                         outputStream.write(buf);
                         outputStream.flush();
-                        System.out.println((int)buf[0]);
+                        System.out.println((int) buf[0]);
                     }
-                    /////////     Видимо, Thread пишет в outputstrean слишком быстро и пытается писать раньше, чем
-                    ////////      stream освободится - sleep (1) проблему с исключением решает
                     try {
                         Thread.sleep(100);
                     } catch (InterruptedException e) {
@@ -84,59 +93,11 @@ public class MyHttpHandler implements HttpHandler {
 
                 }
             } catch (IOException e) {
+                clients--;
                 e.printStackTrace();
             }
 
         }).start();
-
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////
-//           Пробовал через byteBuffer - игнорируйте
-/////////////////////////////////////////////////////////////////////////////////////////////////////
-//        try {
-//            Thread.sleep(10000);
-//
-//        } catch (Exception e) {
-//        }
-//        if (this.byteBuffer == null) {
-//            new Thread(() -> {
-//                try {
-//                    this.byteBuffer = ByteBuffer.wrap(client.getInputStream().readAllBytes());
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
-//            }).start();
-//        }
-//        new Thread(() -> duplicateBuf.add(this.byteBuffer.duplicate())).start();
-//        WritableByteChannel channel = Channels.newChannel(outputStream);
-//
-//        new Thread(() -> {
-//            try {
-//                channel.write(duplicateBuf.get(clientId));
-//                clientId++;
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//        }).start();
-/////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////
-//             Вот так работает, но только с одним потоком
-/////////////////////////////////////////////////////////////////////////////////////////////////////
-//        new Thread(() -> {   //
-//            try {
-//                client.getInputStream().transferTo(outputStream);
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//        }).start();
-//        outputStream.flush();
-/////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
     }
 
     private void setHeaders(HttpExchange httpExchange) {
