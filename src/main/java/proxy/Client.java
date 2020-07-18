@@ -19,7 +19,7 @@ public class Client {
             connection.setRequestMethod("GET");
             setHeaders(connection);
             this.inputStream = connection.getInputStream();
-            System.out.println("passed through GET");
+            System.out.println("client started");
             //connection.disconnect();
         } catch (Exception e) {
             e.printStackTrace();
