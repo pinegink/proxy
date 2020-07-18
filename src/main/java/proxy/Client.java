@@ -14,7 +14,7 @@ public class Client {
 
     public void start() {
         try {
-            URL url = new URL("http://fluxfm.hoerradar.de/fluxfm-berlin");
+            URL url = new URL("http://fluxfm.hoerradar.de/flux-70er-mp3-mq");
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
             setHeaders(connection);

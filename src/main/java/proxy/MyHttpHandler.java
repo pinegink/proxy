@@ -46,11 +46,18 @@ public class MyHttpHandler implements HttpHandler {
         httpExchange.sendResponseHeaders(200, 0);
 
         if (buf == null){
-            buf = new byte[4];
+            buf = new byte[16384];
+            BufferedInputStream bufferedInputStream = new BufferedInputStream(client.getInputStream());
             new Thread(()->{
                 try {
                     while (true){
-                        this.client.getInputStream().read(buf);
+//                        client.getInputStream().read(buf);
+                        bufferedInputStream.read(buf);
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -59,18 +66,18 @@ public class MyHttpHandler implements HttpHandler {
         }
         new Thread(()->{
             try {
-//                byte old =0;
+                byte old =0;
                 while (true){
-//                    if (buf[0] != old){      /// если поставить такой if - данные в buf вообще не обновляются
-//                        old = buf[0];
+                    if (buf[0] != old){      /// если поставить такой if - данные в buf вообще не обновляются
+                        old = buf[0];
                         outputStream.write(buf);
                         outputStream.flush();
                         System.out.println((int)buf[0]);
-//                    }
+                    }
                     /////////     Видимо, Thread пишет в outputstrean слишком быстро и пытается писать раньше, чем
                     ////////      stream освободится - sleep (1) проблему с исключением решает
                     try {
-                        Thread.sleep(1);
+                        Thread.sleep(100);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
