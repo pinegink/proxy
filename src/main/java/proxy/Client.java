@@ -1,9 +1,7 @@
 package proxy;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.HashMap;
@@ -12,29 +10,27 @@ import java.util.logging.Logger;
 
 public class Client {
     private static Logger log = Logger.getLogger(Client.class.getName());
+    private URL url;
+    private HttpURLConnection connection;
     private InputStream inputStream;
     private Map<String, String> responseHeaders;
-    private HttpURLConnection connection;
-    public Client(){
-        System.out.println("client created");
+    private boolean status;
+
+    public Client(String url) throws IOException {
+        this.url = new URL(url);
+        status = true;
         start();
     }
 
-    public void start() {
-        try {
-            URL url = new URL("http://fluxfm.hoerradar.de/flux-70er-mp3-mq");
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("GET");
-            this.connection = connection;
-            setHeaders(connection);
-            this.inputStream = connection.getInputStream();
-            System.out.println("client started");
-            //connection.disconnect();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    public void start() throws IOException {
+        connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("GET");
+        setHeaders();
+        inputStream = connection.getInputStream();
     }
-    public void closeConnection(){
+
+    public void shutDown() {
+        status = false;
         connection.disconnect();
     }
 
@@ -45,14 +41,20 @@ public class Client {
     public Map<String, String> getResponseHeaders() {
         return responseHeaders;
     }
-    private void setHeaders (HttpURLConnection connection) {
+
+    public boolean getStatus() {
+        return status;
+    }
+
+    private void setHeaders() {
         responseHeaders = new HashMap<>();
         int i = 1;
-        while (connection.getHeaderField(i)!=null){
+        while (connection.getHeaderField(i) != null) {
             String field = connection.getHeaderField(i);
             String key = connection.getHeaderFieldKey(i);
             responseHeaders.put(field, key);
             i++;
         }
     }
+
 }
